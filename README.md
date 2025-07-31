@@ -1,4 +1,19 @@
-# SSLCommerz React Native Payment Integration Setup
+# SSLCommerz React Native Payment Integration
+
+## Complete Payment Solution for React Native
+
+This project provides a full SSLCommerz payment integration for React Native applications with bKash, card payments, and mobile banking support.
+
+## Features
+
+✅ **Complete SSLCommerz Integration**  
+✅ **bKash Payment Support**  
+✅ **Card Payment (Visa/MasterCard)**  
+✅ **Mobile Banking (Rocket, Nagad)**  
+✅ **Real-time Payment Status**  
+✅ **Secure Payment Gateway**  
+✅ **Express.js Backend API**  
+✅ **React Native Frontend**  
 
 ## Prerequisites
 - Node.js installed on your system
@@ -134,3 +149,7 @@ ifconfig  # macOS/Linux
 │   └── package.json
 └── README.md
 ```
+=======
+# Payment
+This code is just implement of payment method, its not working for transition
+>>>>>>> a7f4d2fd14a8eb570dd8e700e511aa1148311e4a
