@@ -6,44 +6,39 @@ import { WebView } from 'react-native-webview';
 
 const Stack = createNativeStackNavigator();
 
-// Replace with your actual server IP - check the backend console for the Network URL
-const SERVER_URL = 'http://10.5.230.125:3000'; // Update this with your actual IP
+// 🔧 Update this IP daily (check backend console for Network URL)
+const SERVER_URL = 'http://10.5.228.3:3000';
 
+// Home Screen Component
 function HomeScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
-  const [serverStatus, setServerStatus] = useState('Checking...');
+  const [serverStatus, setServerStatus] = useState('Checking server...');
 
   useEffect(() => {
-    checkServerConnection();
+    checkServer();
   }, []);
 
-  const checkServerConnection = async () => {
+  // Check if backend server is running
+  const checkServer = async () => {
     try {
-      const response = await fetch(`${SERVER_URL}/`, {
-        method: 'GET',
-        timeout: 5000,
-      });
+      const response = await fetch(`${SERVER_URL}/`);
       const data = await response.json();
-      setServerStatus(`✅ Connected - ${data.message}`);
+      setServerStatus(`✅ ${data.message}`);
     } catch (error) {
-      console.error('Server connection error:', error);
       setServerStatus('❌ Server not reachable');
     }
   };
 
+  // Handle payment button press
   const handlePayment = async () => {
     if (serverStatus.includes('❌')) {
-      Alert.alert(
-        'Connection Error', 
-        'Backend server is not reachable. Please check if the server is running and update the SERVER_URL in App.js with your correct IP address.'
-      );
+      Alert.alert('Error', 'Please start the backend server first!');
       return;
     }
 
     setLoading(true);
     try {
-      console.log('Initiating payment...');
-      
+      // Payment data
       const paymentData = {
         amount: 100,
         name: 'Ruhul Amin',
@@ -51,48 +46,26 @@ function HomeScreen({ navigation }) {
         phone: '01782315183',
       };
 
-      console.log('Sending payment data:', paymentData);
-
-      const res = await fetch(`${SERVER_URL}/init`, {
+      // Send payment request to backend
+      const response = await fetch(`${SERVER_URL}/init`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(paymentData),
-        timeout: 10000,
       });
 
-      const data = await res.json();
-      console.log("API Response:", data);
+      const data = await response.json();
 
-      if (res.ok && data.success && data.paymentUrl) {
-        console.log('Navigating to payment URL:', data.paymentUrl);
+      if (response.ok && data.success) {
+        // Navigate to payment screen
         navigation.navigate('PaymentScreen', { 
           url: data.paymentUrl,
           transactionId: data.transactionId 
         });
       } else {
-        console.error('Payment initialization failed:', data);
-        Alert.alert(
-          'Payment Error', 
-          data.error || 'Failed to initialize payment. Please try again.',
-          [
-            { text: 'Retry', onPress: () => handlePayment() },
-            { text: 'Cancel', style: 'cancel' }
-          ]
-        );
+        Alert.alert('Payment Error', data.error || 'Failed to initialize payment');
       }
     } catch (error) {
-      console.error("Frontend error:", error);
-      Alert.alert(
-        'Network Error', 
-        'Could not connect to payment server. Please check your internet connection and try again.',
-        [
-          { text: 'Retry', onPress: () => handlePayment() },
-          { text: 'Cancel', style: 'cancel' }
-        ]
-      );
+      Alert.alert('Network Error', 'Could not connect to payment server');
     } finally {
       setLoading(false);
     }
@@ -100,11 +73,11 @@ function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>SSLCommerz Payment Demo</Text>
+      <Text style={styles.title}>💳 SSLCommerz Payment</Text>
       <Text style={styles.status}>{serverStatus}</Text>
       
       {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#007AFF" />
       ) : (
         <Button 
           title="Pay ৳100 Now" 
@@ -114,40 +87,33 @@ function HomeScreen({ navigation }) {
       )}
       
       <Button 
-        title="Check Server Status" 
-        onPress={checkServerConnection}
+        title="🔄 Check Server" 
+        onPress={checkServer}
         color="#666"
       />
     </View>
   );
 }
 
+// Payment Screen Component
 function PaymentScreen({ route, navigation }) {
   const { url, transactionId } = route.params;
   const [loading, setLoading] = useState(true);
   
-  const handleNavigationStateChange = (navState) => {
-    console.log('WebView navigation:', navState.url);
-    
-    // Handle payment result URLs
+  // Handle payment completion
+  const handleNavigationChange = (navState) => {
     if (navState.url.includes('payment/success')) {
-      Alert.alert(
-        'Payment Successful!', 
-        `Transaction ID: ${transactionId}`,
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
-      );
+      Alert.alert('✅ Payment Successful!', `Transaction: ${transactionId}`, [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
     } else if (navState.url.includes('payment/fail')) {
-      Alert.alert(
-        'Payment Failed', 
-        'Your payment could not be processed.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
-      );
+      Alert.alert('❌ Payment Failed', 'Your payment could not be processed.', [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
     } else if (navState.url.includes('payment/cancel')) {
-      Alert.alert(
-        'Payment Cancelled', 
-        'You cancelled the payment.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
-      );
+      Alert.alert('🚫 Payment Cancelled', 'You cancelled the payment.', [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
     }
   };
 
@@ -155,52 +121,63 @@ function PaymentScreen({ route, navigation }) {
     <View style={styles.paymentContainer}>
       {loading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color="#007AFF" />
           <Text>Loading payment gateway...</Text>
         </View>
       )}
       <WebView 
         source={{ uri: url }}
         onLoad={() => setLoading(false)}
-        onNavigationStateChange={handleNavigationStateChange}
+        onNavigationStateChange={handleNavigationChange}
         javaScriptEnabled={true}
         domStorageEnabled={true}
-        startInLoadingState={true}
       />
     </View>
   );
 }
 
+// Main App Component
 export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
+        <Stack.Screen 
+          name="Home" 
+          component={HomeScreen} 
+          options={{ title: 'Payment App' }}
+        />
+        <Stack.Screen 
+          name="PaymentScreen" 
+          component={PaymentScreen} 
+          options={{ title: 'Complete Payment' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
+// Clean Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#333',
   },
   status: {
-    fontSize: 14,
-    marginBottom: 20,
+    fontSize: 16,
+    marginBottom: 30,
     textAlign: 'center',
     paddingHorizontal: 20,
+    color: '#666',
   },
   paymentContainer: {
     flex: 1,
@@ -211,7 +188,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255,255,255,0.8)',
+    backgroundColor: 'rgba(255,255,255,0.9)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
